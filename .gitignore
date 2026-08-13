@@ -1,0 +1,35 @@
+# Keil MDK build artifacts
+OBJ/
+Listings/
+*.o
+*.axf
+*.hex
+*.bin
+*.map
+*.lst
+*.crf
+*.d
+*.iex
+*.dep
+*.sct
+*.ini
+*.dbgconf
+
+# Keil temporary files
+*.bak
+*.plg
+*.uvguix.*
+*.scvd
+*.tra
+*.tmp
+JLinkLog.txt
+RTE/_*/
+
+# System files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# IDE
+.vscode/
+*.code-workspace
