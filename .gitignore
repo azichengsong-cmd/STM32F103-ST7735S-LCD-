@@ -33,3 +33,6 @@ desktop.ini
 # IDE
 .vscode/
 *.code-workspace
+
+# Office temp files
+~$*
