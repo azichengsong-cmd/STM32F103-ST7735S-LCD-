@@ -84,7 +84,14 @@ crc         : CRC32 校验值(覆盖前 36 字节)
 
 
 
-typedef struct
+/*
+    __packed 防止编译器在 double 字段前插入对齐填充
+    不加 __packed 时 sizeof=44（double 需 8 字节对齐，count 后插入 4 字节填充）
+    加 __packed 后 sizeof=40，与 FLASH_RECORD_SIZE 一致
+    否则 crc 字段偏移变为 40，超出写入范围，CRC 永远不会写入 Flash
+    导致 Flash_Init() 的 CRC 校验永远失败，数据每次重启都"清零"
+*/
+typedef __packed struct
 {
     uint32_t magic;           /* 魔术数，标识有效数据 */
     uint16_t valid;           /* 有效标志：0xFFFF=空槽, 0x0001=有效 */
