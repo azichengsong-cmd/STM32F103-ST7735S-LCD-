@@ -427,7 +427,7 @@ u8 Up_Temp_Data(double temp)
 
 
 
-    if(Wait_Check("OK",500))
+    if(Wait_Check("OK",2000))
         return 1;  /* 温度上传失败 */
 
 
@@ -485,7 +485,7 @@ u8 Up_Pressure_Data(double pressure)
 
 
 
-    if(Wait_Check("OK",500))
+    if(Wait_Check("OK",2000))
         return 1;  /* 气压上传失败 */
 
 
@@ -543,7 +543,7 @@ u8 Up_Altitude_Data(double altitude)
 
 
 
-    if(Wait_Check("OK",500))
+    if(Wait_Check("OK",2000))
         return 1;  /* 海拔上传失败 */
 
 

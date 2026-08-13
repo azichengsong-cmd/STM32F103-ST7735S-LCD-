@@ -333,6 +333,42 @@ u8 Weather_Get(void)
 
 
     /*
+        等待4G网络注册
+
+        上电后Air780E需要时间注册网络，
+        在GPRS未附着时激活bearer会失败（返回+SAPBR: 1,3）。
+        循环检测AT+CGATT?直到返回+CGATT: 1
+        最多等待15秒。
+    */
+
+    {
+        u8 retry;
+
+        for(retry = 0; retry < 15; retry++)
+        {
+            USART2_Clear();
+
+            USART2_SendString(
+                "AT+CGATT?\r\n"
+            );
+
+            delay_ms(500);
+
+            if(strstr(USART2_RX_BUF, "+CGATT: 1") != NULL)
+            {
+                printf("GPRS ATTACHED\r\n");
+                break;
+            }
+
+            printf("Waiting GPRS... (%d)\r\n", retry + 1);
+
+            delay_ms(500);
+        }
+    }
+
+
+
+    /*
         GPRS配置
 
         设置承载参数类型为 GPRS
@@ -371,38 +407,74 @@ u8 Weather_Get(void)
 
 
     /*
-        打开数据连接
+        打开数据连接（带重试）
 
         AT+SAPBR=1,1 打开 GPRS 承载
         AT+SAPBR=2,1 查询承载状态
+
+        +SAPBR: 1,1,"x.x.x.x" 表示已激活
+        +SAPBR: 1,3,"0.0.0.0" 表示未激活
+
+        如果激活失败，重试最多3次
     */
 
-    USART2_Clear();
+    {
+        u8 br_retry;
 
-    /* 打开 GPRS 数据连接 */
-    USART2_SendString(
-        "AT+SAPBR=1,1\r\n"
-    );
+        for(br_retry = 0; br_retry < 3; br_retry++)
+        {
+            USART2_Clear();
 
-    Weather_WaitCheck(
-        "OK",
-        10000
-    );
+            /* 打开 GPRS 数据连接 */
+            USART2_SendString(
+                "AT+SAPBR=1,1\r\n"
+            );
+
+            Weather_WaitCheck(
+                "OK",
+                10000
+            );
 
 
+            /* 查询承载连接状态 */
+            USART2_Clear();
 
+            USART2_SendString(
+                "AT+SAPBR=2,1\r\n"
+            );
 
-    USART2_Clear();
+            Weather_WaitCheck(
+                "OK",
+                3000
+            );
 
-    /* 查询承载连接状态 */
-    USART2_SendString(
-        "AT+SAPBR=2,1\r\n"
-    );
+            /* 检查是否已激活：+SAPBR: 1,1, 表示有IP地址 */
+            if(strstr(USART2_RX_BUF, "+SAPBR: 1,1,") != NULL)
+            {
+                printf("BEARER ACTIVATED\r\n");
+                break;
+            }
 
-    Weather_WaitCheck(
-        "OK",
-        3000
-    );
+            /* 如果返回+SAPBR: 1,1表示已经打开，也算成功 */
+            if(strstr(USART2_RX_BUF, "ERROR") != NULL && br_retry == 0)
+            {
+                /* 第一次报ERROR可能是bearer已打开，查询确认 */
+                USART2_Clear();
+                USART2_SendString("AT+SAPBR=2,1\r\n");
+                Weather_WaitCheck("OK", 3000);
+
+                if(strstr(USART2_RX_BUF, "+SAPBR: 1,1,") != NULL)
+                {
+                    printf("BEARER ALREADY ACTIVE\r\n");
+                    break;
+                }
+            }
+
+            printf("BEARER RETRY... (%d)\r\n", br_retry + 1);
+
+            delay_ms(1000);
+        }
+    }
 
 
 
